@@ -78,7 +78,7 @@ public class GlobalBean {
     variable
      */
     public boolean flag = true;        //播放标志
-    public boolean flag1 = false;        //jieshu标志
+    public boolean flag1 = false;        //结束标志
     public boolean senddataflag = true;   //发送数据标志
 
     public ArrayList<Double> L_I[];
@@ -94,6 +94,7 @@ public class GlobalBean {
     private String[] codesstr = {"ncnntest", "static", "push left", "push right", "click", "flip", "grab", "release"};
 
     private int lstm_predict_count = 0;
+    //Integer lstm_predict_count = new Integer(0);
 
     private float dataraw[][][] = new float[8][2200][2];
     private float[][] gesturedata = new float[4][8800];
@@ -108,7 +109,7 @@ public class GlobalBean {
             switch (msg.what) {
                 case 0:
                     if (msg.obj.toString().equals("predict")) {
-                        flag_small.setVisibility(View.GONE);
+                        flag_small.setVisibility(View.VISIBLE);
                         long time = System.currentTimeMillis();
                         final String day = String.valueOf(time);
 
@@ -190,11 +191,16 @@ public class GlobalBean {
         }
 
 
-        long inde = tensorFlowUtil.PredictContinous(gesturedata, lstm_predict_count);
-        tvDist.setText(gesture_name[(int) inde]);
-        lstm_predict_count++;
-        lstm_predict_count=lstm_predict_count%4;
-
+        long inde = tensorFlowUtil.PredictContinous(gesturedata,lstm_predict_count);
+        if(inde == -1) {
+            lstm_predict_count++;
+            lstm_predict_count = lstm_predict_count % 4;
+            tvDist.setText("...");
+        }
+        else {
+            tvDist.setText(gesture_name[(int) inde]);
+            lstm_predict_count = 0;
+        }
 
 /*        if (senddataflag) {
             SaveData(name, max_index, data_i, data_q);

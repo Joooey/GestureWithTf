@@ -21,7 +21,11 @@ public class TensorFlowUtil {
     private String fullconnection1 = "fullconnection1";
     private String input_lstm = "input_lstm";
     private String output_lstm = "output_lstm";
-
+    private String cnn_accuracy = "softmax";
+    private String lstm_accuracy = "softmax_lstm";
+    //存储cnn和lstm的可信度
+    private float[] cnn_softmax;//大小为13
+    private float[] lstm_softmax;//大小为6
 
     private String[] outputNames;
     private String[] outputNames2;
@@ -43,14 +47,20 @@ public class TensorFlowUtil {
             this.assetManager = assetManager;
             inferenceInterface = new TensorFlowInferenceInterface(assetManager, model);
             outputNames = new String[]{fullconnection1};
-            outputNames2 = new String[]{output_lstm};
+            //如果需要cnn部分的置信度
+            //outputNames = new String[]{fullconnection1，cnn_accuracy};
+            //outputNames2 = new String[]{output_lstm};
+            //如果需要lstm部分的置信度
+            outputNames2 = new String[]{output_lstm, lstm_accuracy};
+
             floatValues = new float[w * h * c];
 
             outputs = new float[classes];
             outputfuuconnection = new float[256];
 
             outputint = new long[1];
-
+            cnn_softmax = new float[13];
+            lstm_softmax = new float[6];
             PredictContinousTest();
 
 
@@ -77,13 +87,13 @@ public class TensorFlowUtil {
 
     @SuppressLint("LongLogTag")
     public long PredictContinous(float[][] gesturedata, int count) {
-
+        float accuracymax = 0;
         float input_ls[] = new float[1024];
         for (int i = 0; i < 1024; i++) {
             input_ls[i] = 0;
         }
         float mic_gesture[] = new float[8800];
-        for (int i = 0; i < count; i++) {
+        for (int i = 0; i <= count; i++) {
 
             for (int j = 0; j < 8800; j++) {
                 mic_gesture[j] = gesturedata[i][j];
@@ -92,18 +102,29 @@ public class TensorFlowUtil {
             inferenceInterface.feed(input_cnn, mic_gesture, 1, 8, 550, 2);
             inferenceInterface.run(outputNames, logStats);
             inferenceInterface.fetch(fullconnection1, outputfuuconnection);
-
+            //执行这句之后cnn_softmax里面就是当前cnn网络根据送入的数据预测出来的各组label的可信度，存储在cnn_softmax中，每一个下标中存储的是
+            //对应label的概率
+            //inferenceInterface.fetch(cnn_accuracy, cnn_softmax);
             for (int k = i * 256; k < (i + 1) * 256; k++) {
-                input_ls[k] = outputfuuconnection[k%256];
+                input_ls[k] = outputfuuconnection[k % 256];
             }
         }
 
         inferenceInterface.feed(input_lstm, input_ls, 1, 1024, 1, 1);
         inferenceInterface.run(outputNames2, logStats);
         inferenceInterface.fetch(output_lstm, outputint);
-
-        Log.i("TensorflowesturePredict", "result:" + outputint[0]);
-        return outputint[0];
+        //执行下面这一句之后拿到的识别lstm的可信度，lstm_softmax六个位置存储6个label的概率
+        inferenceInterface.fetch(lstm_accuracy, lstm_softmax);
+        for (int i = 0; i < 6; i++) {
+            if (lstm_softmax[i] > accuracymax)
+                accuracymax = lstm_softmax[i];
+        }
+        if (accuracymax > 0.9) {
+           // Log.i("TensorflowesturePredict", "result:" + outputint[0]);
+            return outputint[0];
+        }
+        else
+            return -1;
     }
 
     @SuppressLint("LongLogTag")
