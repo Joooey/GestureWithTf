@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import cn.dmrf.nuaa.gesturewithtf.JniClass.SignalProcess;
 import cn.dmrf.nuaa.gesturewithtf.Utils.TensorFlowUtil;
@@ -52,7 +53,7 @@ public class GlobalBean {
     public int recBufSize = 4400;            //定义录音片长度
     public int numfre = 8;
     public char[] CODE = {'A', 'B', 'C', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O'};
-    public String[] gesture_name={"Static","Push Left","Push Right","Click","Flip","Circle"};
+    public String[] gesture_name = {"Static", "Push Left", "Push Right", "Click", "Flip", "Circle"};
     public float[] scores = new float[13];
     public int[] len_i = new int[2];
 
@@ -97,7 +98,7 @@ public class GlobalBean {
     //Integer lstm_predict_count = new Integer(0);
 
     private float dataraw[][][] = new float[8][2200][2];
-    private float[][] gesturedata = new float[4][8800];
+
 
 
     @SuppressLint("HandlerLeak")
@@ -151,6 +152,13 @@ public class GlobalBean {
     };
 
 
+
+   //list类型的gesturedata，list的每一个item应该是一个0.5s对应的数据
+    private List<float[]> gesturedata=new ArrayList<float[]>();
+
+    /*
+    每0.5s执行一次
+     */
     private void PredictContinousGesture() {//第一个a为0，第二个a为550
 
         float id[] = new float[4400];
@@ -164,7 +172,7 @@ public class GlobalBean {
             }
         }
 
-        signalProcess.Normalize(id, qd);
+        signalProcess.Normalize(id, qd);//归一化
 
 
         float dataraw[][][] = new float[8][550][2];
@@ -181,30 +189,32 @@ public class GlobalBean {
             }
         }
 
+        float a[]=new float[8800];
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 550; j++) {
                 for (int k = 0; k < 2; k++) {
-                    gesturedata[lstm_predict_count][k + j * 2 + i * 1100] = dataraw[i][j][k];
+                    a[k + j * 2 + i * 1100] = dataraw[i][j][k];
 
                 }
             }
         }
 
+        gesturedata.add(a);
 
-        long inde = tensorFlowUtil.PredictContinous(gesturedata,lstm_predict_count);
-        if(inde == -1) {
-            lstm_predict_count++;
-            lstm_predict_count = lstm_predict_count % 4;
+
+        long inde = tensorFlowUtil.PredictContinous(gesturedata, gesturedata.size());
+        if (inde == -1) {
+            //如果当前gesturedata里面放了4个0.5s的数据
+            if (gesturedata.size()==4){
+                //将第一个0.5s的数据remove，后面3个会自动向前补齐，这样下一个0.5s的数据会add到第四个位置，达到划窗的效果
+                gesturedata.remove(0);//移除index为0的那0.5s的数据
+
+            }
             tvDist.setText("...");
-        }
-        else {
+        } else {
             tvDist.setText(gesture_name[(int) inde]);
-            lstm_predict_count = 0;
+            gesturedata.clear();//直接清空数据源
         }
-
-/*        if (senddataflag) {
-            SaveData(name, max_index, data_i, data_q);
-        }*/
 
 
     }
