@@ -84,7 +84,6 @@ public class InstantRecordThread extends Thread {
                 begin_while++;
                 Message msg2 = new Message();
                 msg2.what = 0;
-
                 msg2.obj = ("predict");
                 globalBean.mHandler.sendMessage(msg2);
 

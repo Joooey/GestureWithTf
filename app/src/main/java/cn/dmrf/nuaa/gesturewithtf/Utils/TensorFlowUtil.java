@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.channels.FileLock;
 import java.util.ArrayList;
+import java.util.List;
 
 public class TensorFlowUtil {
 
@@ -86,17 +87,19 @@ public class TensorFlowUtil {
 
 
     @SuppressLint("LongLogTag")
-    public long PredictContinous(float[][] gesturedata, int count) {
-        float accuracymax = 0;
+    public long PredictContinous(List<float[]> gesturedata, int count) {
+        float accuracymax = -1;
+        int max_index = -1;
+
         float input_ls[] = new float[1024];
         for (int i = 0; i < 1024; i++) {
             input_ls[i] = 0;
         }
         float mic_gesture[] = new float[8800];
-        for (int i = 0; i <= count; i++) {
+        for (int i = 0; i < count; i++) {
 
             for (int j = 0; j < 8800; j++) {
-                mic_gesture[j] = gesturedata[i][j];
+                mic_gesture[j] = gesturedata.get(i)[j];
             }
 
             inferenceInterface.feed(input_cnn, mic_gesture, 1, 8, 550, 2);
@@ -112,19 +115,18 @@ public class TensorFlowUtil {
 
         inferenceInterface.feed(input_lstm, input_ls, 1, 1024, 1, 1);
         inferenceInterface.run(outputNames2, logStats);
-        inferenceInterface.fetch(output_lstm, outputint);
+        //inferenceInterface.fetch(output_lstm, outputint);
         //执行下面这一句之后拿到的识别lstm的可信度，lstm_softmax六个位置存储6个label的概率
         inferenceInterface.fetch(lstm_accuracy, lstm_softmax);
+
         for (int i = 0; i < 6; i++) {
-            if (lstm_softmax[i] > accuracymax)
+            if (lstm_softmax[i] > accuracymax && lstm_softmax[i] > 0.9) {
                 accuracymax = lstm_softmax[i];
+                max_index = i;
+            }
         }
-        if (accuracymax > 0.9) {
-           // Log.i("TensorflowesturePredict", "result:" + outputint[0]);
-            return outputint[0];
-        }
-        else
-            return -1;
+
+        return max_index;
     }
 
     @SuppressLint("LongLogTag")
