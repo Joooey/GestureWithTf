@@ -98,7 +98,6 @@ public class TensorFlowUtil {
             for (int j = 0; j < 8800; j++) {
                 mic_gesture[j] = gesturedata[i][j];
             }
-
             inferenceInterface.feed(input_cnn, mic_gesture, 1, 8, 550, 2);
             inferenceInterface.run(outputNames, logStats);
             inferenceInterface.fetch(fullconnection1, outputfuuconnection);
