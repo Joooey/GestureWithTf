@@ -100,7 +100,6 @@ public class GlobalBean {
     private float dataraw[][][] = new float[8][2200][2];
 
 
-
     @SuppressLint("HandlerLeak")
     public Handler mHandler = new Handler() {
         //设置圆环角度
@@ -153,9 +152,6 @@ public class GlobalBean {
 
 
 
-   //list类型的gesturedata，list的每一个item应该是一个0.5s对应的数据
-    private List<float[]> gesturedata=new ArrayList<float[]>();
-
     /*
     每0.5s执行一次
      */
@@ -189,7 +185,7 @@ public class GlobalBean {
             }
         }
 
-        float a[]=new float[8800];
+        float a[] = new float[8800];
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 550; j++) {
                 for (int k = 0; k < 2; k++) {
@@ -198,22 +194,18 @@ public class GlobalBean {
                 }
             }
         }
+        int inde=-1;
 
-        gesturedata.add(a);
+        /*
+        两种预测方案，index对应0和1
+         */
+        //inde = tensorFlowUtil.PredictContinous(a, 0);
+       // inde = tensorFlowUtil.PredictContinous(a, 1);
 
-
-        long inde = tensorFlowUtil.PredictContinous(gesturedata, gesturedata.size());
         if (inde == -1) {
-            //如果当前gesturedata里面放了4个0.5s的数据
-            if (gesturedata.size()==4){
-                //将第一个0.5s的数据remove，后面3个会自动向前补齐，这样下一个0.5s的数据会add到第四个位置，达到划窗的效果
-                gesturedata.remove(0);//移除index为0的那0.5s的数据
-
-            }
             tvDist.setText("...");
         } else {
-            tvDist.setText(gesture_name[(int) inde]);
-            gesturedata.clear();//直接清空数据源
+            tvDist.setText(gesture_name[inde]);
         }
 
 
