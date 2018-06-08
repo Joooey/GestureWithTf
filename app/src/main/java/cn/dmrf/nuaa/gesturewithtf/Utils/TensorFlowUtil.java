@@ -157,15 +157,15 @@ public class TensorFlowUtil {
 
                 float res2[];
 
-
+                 //first_pre_256-cur_256-zero-zero——>third_pre_256-second_pre_256-first_pre_256-cur_256
                 if (pre256_size >= 3) {
-                    four_256.remove(0);
-                    four_256.remove(1);
+                    //移除最后两个256的zero
+                    four_256.remove(2);
                     four_256.remove(2);
 
+                    //将两个pre 256插入到four_256的前两个位置
                     four_256.add(0, four_256.get(pre256_size - 3));
                     four_256.add(0, four_256.get(pre256_size - 2));
-                    four_256.add(0, four_256.get(pre256_size - 1));
 
                     input_lstm = ListToArray(four_256);
                     res2 = PredictContinous0(input_lstm);
@@ -181,7 +181,7 @@ public class TensorFlowUtil {
 
                 //将当前256存下来
                 pre_256.add(cur_fc);
-                if (pre256_size == 4) {
+                if (pre256_size == 4) {//控制划窗的max size
                     pre_256.remove(0);
                 }
 

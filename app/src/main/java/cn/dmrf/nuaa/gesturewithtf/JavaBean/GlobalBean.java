@@ -111,15 +111,20 @@ public class GlobalBean {
     /*
     每0.5s执行一次
      */
-    private void PredictContinousGesture() {//第一个a为0，第二个a为550
+    private void PredictContinousGesture() {
 
         float id[] = new float[4400];
         float qd[] = new float[4400];
         int ks = 0;
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 550; j++) {
-                id[ks] = L_I[i].get(j).floatValue();
-                qd[ks] = L_Q[i].get(j).floatValue();
+                try {
+                    id[ks] = L_I[i].get(j).floatValue();
+                    qd[ks] = L_Q[i].get(j).floatValue();
+                }catch (IndexOutOfBoundsException e){//捕捉一下数组越界的异常，偶尔会出现数据缺失导致数组越界的情况，应该是audio层有问题
+                    return;
+                }
+
                 ks++;
             }
         }
