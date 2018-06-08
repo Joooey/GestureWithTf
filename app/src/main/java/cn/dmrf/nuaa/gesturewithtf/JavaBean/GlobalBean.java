@@ -1,37 +1,27 @@
 package cn.dmrf.nuaa.gesturewithtf.JavaBean;
 
 import android.annotation.SuppressLint;
-import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.graphics.drawable.ColorDrawable;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Handler;
 import android.os.Message;
 import android.view.View;
-import android.view.Window;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 
 import cn.dmrf.nuaa.gesturewithtf.JniClass.SignalProcess;
 import cn.dmrf.nuaa.gesturewithtf.Utils.TensorFlowUtil;
 import cn.dmrf.nuaa.gesturewithtf.Thread.InstantPlayThread;
 import cn.dmrf.nuaa.gesturewithtf.Thread.InstantRecordThread;
 import cn.dmrf.nuaa.gesturewithtf.Utils.FrequencyPlayerUtils;
-import cn.dmrf.nuaa.gesturewithtf.Utils.NetWorkUtils;
-import cn.dmrf.nuaa.gesturewithtf.Utils.SendDataUtils;
 
 
 /**
@@ -52,10 +42,7 @@ public class GlobalBean {
     public int sampleRateInHz = 44100;//采样率（默认44100，每秒44100个点）
     public int recBufSize = 4400;            //定义录音片长度
     public int numfre = 8;
-    public char[] CODE = {'A', 'B', 'C', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O'};
     public String[] gesture_name = {"Static", "Push Left", "Push Right", "Click", "Flip", "Circle"};
-    public float[] scores = new float[13];
-    public int[] len_i = new int[2];
 
     public TensorFlowUtil tensorFlowUtil;
 
@@ -66,11 +53,11 @@ public class GlobalBean {
     public Button btnPlayRecord;        //开始按钮
     public Button btnStopRecord;        //结束按钮
     public TextView tvDist;
-    public TextView no_network_worning;
+
+    public TextView tvDist2;
+
     public ImageView flag_small;
 
-    public int is_in_count = -1;
-    public int gesture_length = 1100;
 
     /*
     variable
@@ -82,38 +69,24 @@ public class GlobalBean {
     public ArrayList<Double> L_Q[];
 
 
-    public String whoandwhich = "W";
-
     private Context context;
 
     public SignalProcess signalProcess;
 
-    private String[] codesstr = {"ncnntest", "static", "push left", "push right", "click", "flip", "grab", "release"};
-
-    private int lstm_predict_count = 0;
-    //Integer lstm_predict_count = new Integer(0);
-
-    private float dataraw[][][] = new float[8][2200][2];
-
-
 
     @SuppressLint("HandlerLeak")
     public Handler mHandler = new Handler() {
-        //设置圆环角度
-        @SuppressLint("ResourceAsColor")
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case 0:
                     if (msg.obj.toString().equals("predict")) {
                         flag_small.setVisibility(View.VISIBLE);
-                        long time = System.currentTimeMillis();
-                        final String day = String.valueOf(time);
 
                         PredictContinousGesture();
 
 
-                        for (int i = 0; i < 8; i++) {
+                        for (int i = 0; i < 8; i++) {//clear掉数据源，防止影响后面的数据
                             L_I[i].clear();
                             L_Q[i].clear();
                         }
@@ -121,14 +94,9 @@ public class GlobalBean {
                     } else if (msg.obj.toString().equals("start")) {
 
                         flag_small.setVisibility(View.VISIBLE);
-                        Start();
+                        StartInit();
                     } else if (msg.obj.toString().equals("stop")) {
                         flag_small.setVisibility(View.GONE);
-
-                        // btnPlayRecord.setVisibility(View.VISIBLE);
-
-                        //btnStopRecord.setVisibility(View.GONE);
-
                         FPlay.colseWaveZ();
                         audioRecord.stop();
                         flag1 = false;
@@ -137,32 +105,29 @@ public class GlobalBean {
                         Toast.makeText(context, "发生了异常，请联系最帅的人优化代码～", Toast.LENGTH_SHORT).show();
                     }
                     break;
-                case 1:
-                    tvDist.setText(msg.obj.toString());
-                    break;
-                case 2:
-                    break;
+
             }
         }
     };
 
 
-
-   //list类型的gesturedata，list的每一个item应该是一个0.5s对应的数据
-    private List<float[]> gesturedata=new ArrayList<float[]>();
-
     /*
     每0.5s执行一次
      */
-    private void PredictContinousGesture() {//第一个a为0，第二个a为550
+    private void PredictContinousGesture() {
 
         float id[] = new float[4400];
         float qd[] = new float[4400];
         int ks = 0;
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 550; j++) {
-                id[ks] = L_I[i].get(j).floatValue();
-                qd[ks] = L_Q[i].get(j).floatValue();
+                try {
+                    id[ks] = L_I[i].get(j).floatValue();
+                    qd[ks] = L_Q[i].get(j).floatValue();
+                }catch (IndexOutOfBoundsException e){//捕捉一下数组越界的异常，偶尔会出现数据缺失导致数组越界的情况，应该是audio层有问题
+                    return;
+                }
+
                 ks++;
             }
         }
@@ -184,7 +149,7 @@ public class GlobalBean {
             }
         }
 
-        float a[]=new float[8800];
+        float a[] = new float[8800];
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 550; j++) {
                 for (int k = 0; k < 2; k++) {
@@ -193,22 +158,24 @@ public class GlobalBean {
                 }
             }
         }
+        int inde = -1;
 
-        gesturedata.add(a);
-
-
-        long inde = tensorFlowUtil.PredictContinous(gesturedata, gesturedata.size());
+        /*
+        两种预测方案，index对应0和1
+         */
+        inde = tensorFlowUtil.PredictContinous(a, 0);
         if (inde == -1) {
-            //如果当前gesturedata里面放了4个0.5s的数据
-            if (gesturedata.size()==4){
-                //将第一个0.5s的数据remove，后面3个会自动向前补齐，这样下一个0.5s的数据会add到第四个位置，达到划窗的效果
-                gesturedata.remove(0);//移除index为0的那0.5s的数据
-
-            }
             tvDist.setText("...");
         } else {
-            tvDist.setText(gesture_name[(int) inde]);
-            gesturedata.clear();//直接清空数据源
+            tvDist.setText(gesture_name[inde]);
+        }
+
+
+        inde = tensorFlowUtil.PredictContinous(a, 1);
+        if (inde == -1) {
+            tvDist2.setText("...");
+        } else {
+            tvDist2.setText(gesture_name[inde]);
         }
 
 
@@ -220,12 +187,6 @@ public class GlobalBean {
     }
 
     public void Init() throws IOException {
-
-
-        SimpleDateFormat formatter = new SimpleDateFormat("MM_dd");
-        Date curDate = new Date(System.currentTimeMillis());//获取当前时间
-        final String day = formatter.format(curDate);
-        whoandwhich = whoandwhich + "_" + day;
 
 
         L_I = new ArrayList[8];
@@ -246,8 +207,6 @@ public class GlobalBean {
                 recBufSize);//录音片段的长度，给的是minBufSize=recBufSize = 4400 * 2;
 
 
-        // btnStopRecord.setVisibility(View.GONE);
-
         InitListener();
 
 
@@ -260,15 +219,19 @@ public class GlobalBean {
             @SuppressLint("ResourceAsColor")
             @Override
             public void onClick(View v) {
+//
+//<<<<<<< HEAD
+//
+//
+//                if (whoandwhich.equals("")) {
+//                    Toast.makeText(context, "不告诉我你是谁不让你录！", Toast.LENGTH_SHORT).show();
+//                    return;
+//                }
+//
+//                Start();
+//=======
+                StartInit();
 
-
-
-                if (whoandwhich.equals("")) {
-                    Toast.makeText(context, "不告诉我你是谁不让你录！", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                Start();
 
                 new InstantPlayThread(GlobalBean.this).start();        //播放(发射超声波)
 
@@ -320,15 +283,7 @@ public class GlobalBean {
     }
 
 
-    private void Start() {
-        for (int i = 0; i < 8; i++) {
-            for (int j = 0; j < 550; j++) {
-                for (int k = 0; k < 2; k++) {
-                    dataraw[i][j][k] = 0;
-                }
-            }
-        }
-        lstm_predict_count = 0;
+    private void StartInit() {
 
         if (L_I[0] != null) {
             for (int i = 0; i < 8; i++) {
@@ -336,66 +291,6 @@ public class GlobalBean {
                 L_Q[i].clear();
             }
         }
-
         flag = true;
-
     }
-
-
-    public void ShowChoiseWhich() {
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(context, android.R.style.Theme_Holo_Light_Dialog);
-        //builder.setIcon(R.drawable.ic_launcher);
-        builder.setTitle("设置手势种类");
-        //    指定下拉列表的显示数据
-        final String[] codes = {"ncnntest", "static", "push left", "push right", "click", "flip", "grab", "release"};
-
-
-        //    设置一个下拉的列表选择项
-        builder.setItems(codes, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-
-                whoandwhich = codes[which];
-
-            }
-        });
-        AlertDialog alertDialog = builder.create();
-        final Window window = alertDialog.getWindow();
-        window.setBackgroundDrawable(new ColorDrawable(0));
-        alertDialog.show();
-    }
-
-
-    private void SaveData(String name, int max_index, float[] data_i, float[] data_q) {
-
-        DataBean dataBean = new DataBean();
-
-        // 自定义一个字符缓冲区，
-        StringBuilder sb = new StringBuilder();
-        StringBuilder sb2 = new StringBuilder();
-        sb.append("[ ");
-        sb2.append("[ ");
-        //遍历int数组，并将int数组中的元素转换成字符串储存到字符缓冲区中去
-        for (int i = 0; i < data_i.length; i++) {
-            if (i != data_i.length - 1) {
-                sb.append(data_i[i] + " ,");
-                sb2.append(data_q[i] + " ,");
-            } else {
-                sb.append(data_i[i] + " ]");
-                sb2.append(data_q[i] + " ]");
-            }
-
-        }
-
-        dataBean.setI(String.valueOf(sb));
-        dataBean.setQ(String.valueOf(sb2));
-        dataBean.setPre_label(String.valueOf(max_index));
-        dataBean.setFilename(whoandwhich + "_" + name);
-
-        SendDataUtils sendDataUtils = new SendDataUtils(dataBean, context, this);
-        sendDataUtils.execute("");
-    }
-
-
 }

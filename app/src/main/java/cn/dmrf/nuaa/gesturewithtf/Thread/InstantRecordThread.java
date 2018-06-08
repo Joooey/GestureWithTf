@@ -37,8 +37,6 @@ public class InstantRecordThread extends Thread {
             globalBean.audioRecord.startRecording();
 
         } catch (IllegalStateException e) {
-            // 录音开始失败
-            //Toast.makeText(context, "录音开始失败！", Toast.LENGTH_SHORT).show();
             e.printStackTrace();
             return;
         }
@@ -65,21 +63,18 @@ public class InstantRecordThread extends Thread {
             if (begin_while > 0) {
                 globalBean.AddDataToList(globalBean.L_I, tempIIL);
                 globalBean.AddDataToList(globalBean.L_Q, tempQQL);
-
             }
 
 
-            if (while_count == 5 && begin_while == 0) {
+            if (while_count == 5 && begin_while == 0) {//跳过开始的5次循环，因为前5个的数据都为0
                 Message msg3 = new Message();
                 msg3.what = 0;
-
                 msg3.obj = ("start");
-                globalBean.mHandler.sendMessage(msg3);
+                globalBean.mHandler.sendMessage(msg3);//第5次循环之后发送消息开始更新UI
                 while_count = 0;
                 begin_while++;
             } else if (while_count == 5 && begin_while > 0) {
 
-                //    SaveData();
                 while_count = 0;
                 begin_while++;
                 Message msg2 = new Message();
@@ -90,7 +85,6 @@ public class InstantRecordThread extends Thread {
 
             }
             if (globalBean.flag1) {
-
                 Message msg2 = new Message();
                 msg2.what = 0;
                 msg2.obj = "stop";
@@ -108,6 +102,6 @@ public class InstantRecordThread extends Thread {
             while (NowPhase < 0) NowPhase += Math.PI * 2;
             while (NowPhase > Math.PI * 2) NowPhase -= Math.PI * 2;
 
-        }//while end
+        }
     }
 }
