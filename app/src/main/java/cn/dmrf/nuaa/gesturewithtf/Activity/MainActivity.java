@@ -43,12 +43,8 @@ public class MainActivity extends AppCompatActivity {
     private void Init() throws IOException {
         globalBean.btnPlayRecord = (Button) findViewById(R.id.btnplayrecord);
         globalBean.btnStopRecord = (Button) findViewById(R.id.btnstoprecord);
-        globalBean.btnSet=findViewById(R.id.btnset);
         globalBean.tvDist = (TextView) findViewById(R.id.textView1);
-        globalBean.tvDist2 = (TextView) findViewById(R.id.textView2);
         globalBean.flag_small = (ImageView) findViewById(R.id.flag_small);
-        globalBean.CkBox_send=findViewById(R.id.checkBox_send);
-        globalBean.no_network_worning=(TextView)findViewById(R.id.no_network_worning);
         globalBean.Init();
 
 

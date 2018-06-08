@@ -65,12 +65,9 @@ public class GlobalBean {
      */
     public Button btnPlayRecord;        //开始按钮
     public Button btnStopRecord;        //结束按钮
-    public Button btnSet;        //结束按钮
     public TextView tvDist;
-    public TextView tvDist2;
     public TextView no_network_worning;
     public ImageView flag_small;
-    public CheckBox CkBox_send;
 
     public int is_in_count = -1;
     public int gesture_length = 1100;
@@ -80,7 +77,6 @@ public class GlobalBean {
      */
     public boolean flag = true;        //播放标志
     public boolean flag1 = false;        //结束标志
-    public boolean senddataflag = true;   //发送数据标志
 
     public ArrayList<Double> L_I[];
     public ArrayList<Double> L_Q[];
@@ -145,7 +141,6 @@ public class GlobalBean {
                     tvDist.setText(msg.obj.toString());
                     break;
                 case 2:
-                    tvDist2.setText(msg.obj.toString());
                     break;
             }
         }
@@ -266,15 +261,6 @@ public class GlobalBean {
             @Override
             public void onClick(View v) {
 
-                senddataflag = CkBox_send.isChecked();
-
-                if (senddataflag) {
-
-                    if (NetWorkUtils.getAPNType(context) == 0) {
-                        no_network_worning.setVisibility(View.VISIBLE);
-                        return;
-                    }
-                }
 
 
                 if (whoandwhich.equals("")) {
@@ -313,12 +299,6 @@ public class GlobalBean {
             }
         });
 
-        btnSet.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ShowChoiseWhich();
-            }
-        });
 
     }
 
