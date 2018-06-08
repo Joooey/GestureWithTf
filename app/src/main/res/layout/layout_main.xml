@@ -5,25 +5,9 @@
     android:orientation="vertical">
 
 
-    <TextView
-        android:id="@+id/no_network_worning"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@drawable/view_radius_nonetwork_worning"
-        android:gravity="center_horizontal"
-        android:text="您的网络状况不佳，请检查网络！"
-        android:textColor="#1C1C1C"
-        android:textSize="20dp"
-        android:visibility="gone"/>
 
 
-    <CheckBox
-        android:id="@+id/checkBox_send"
-        android:layout_width="107dp"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:text="send"
-        android:textColor="#008000" />
+
 
     <Button
         android:id="@+id/btnplayrecord"
@@ -45,15 +29,7 @@
         android:textColor="#008000"
         android:textSize="20dp" />
 
-    <Button
-        android:id="@+id/btnset"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:alpha="0.5"
-        android:text="set"
-        android:textColor="#008000"
-        android:textSize="20dp" />
+
 
 
     <ImageView

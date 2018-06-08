@@ -31,7 +31,6 @@ public class TensorFlowUtil {
 
     private String[] outputNames;
     private String[] outputNames2;
-    private float[] floatValues;
     private float[] outputs;
     private long[] outputint;
     private float[] outputfuuconnection;
@@ -55,7 +54,6 @@ public class TensorFlowUtil {
             //如果需要lstm部分的置信度
             outputNames2 = new String[]{output_lstm_name, lstm_accuracy_name};
 
-            floatValues = new float[w * h * c];
 
             outputs = new float[classes];
             outputfuuconnection = new float[256];
@@ -63,7 +61,6 @@ public class TensorFlowUtil {
             outputint = new long[1];
             cnn_softmax = new float[13];
             lstm_softmax = new float[6];
-            PredictContinousTest();
 
 
         } catch (Exception e) {
@@ -94,7 +91,7 @@ public class TensorFlowUtil {
 
 
     /*
-    不管哪种情况Predict的输入始终是当前0.5mic的数据
+    不管哪种输入方案Predict的输入始终控制为当前0.5mic的数据，这样可以保证每0.5s出一个label
      */
     //cur_mic是8800的数组
     public int PredictContinous(float cur_mic[], int index_case) {
@@ -109,7 +106,6 @@ public class TensorFlowUtil {
                      + one pre 0.5s and cur 0.5s and 1s zeros
                      + two pre 0.5s and cur 0.5s and 0.5s zeros//因为不存在持续时长为1.5s的手势，所以没有这个case
                      + three pre 0.5s and cur 0.5s
-
                  */
 
 
@@ -218,41 +214,7 @@ public class TensorFlowUtil {
         return -1;
     }
 
-    private int PredictContinous1(float[] input_lstm) {
-        inferenceInterface.feed(input_lstm_name, input_lstm, 1, 1024, 1, 1);
-        inferenceInterface.run(outputNames2, logStats);
-        //执行下面这一句之后拿到的识别lstm的可信度，lstm_softmax六个位置存储6个label的概率
-        inferenceInterface.fetch(lstm_accuracy_name, lstm_softmax);
-        inferenceInterface.fetch(output_lstm_name, outputint);
-        int max_index = (int) outputint[0];
-        if (lstm_softmax[max_index] > 0.9) {
-            return max_index;
-        }
-        return -1;
 
-    }
-
-    private float[] ListToArray(List<float[]> four_256) {
-        float array[] = new float[1024];
-
-
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 256; j++) {
-                array[i * 256 + j] = four_256.get(i)[j];
-            }
-        }
-
-        return array;
-    }
-
-    //输入是8800的mic data，返回256的全连接层输出
-    private float[] FromCnnGetFc(float[] input_cnn) {
-        float output_fc[] = new float[256];
-        inferenceInterface.feed(input_cnn_name, input_cnn, 1, 8, 550, 2);
-        inferenceInterface.run(outputNames, logStats);
-        inferenceInterface.fetch(fullconnection1_name, output_fc);
-        return output_fc;
-    }
 
     private float[] PredictContinous0(float[] input_lstm) {
 
@@ -276,85 +238,39 @@ public class TensorFlowUtil {
     }
 
 
-
-    @SuppressLint("LongLogTag")
-    public void PredictTest() {
-        try {
-            InputStream is = assetManager.open(target + "_I.txt");
-            ArrayList<Float> id = readTextFromFile(is);
-            InputStream is2 = assetManager.open(target + "_Q.txt");
-            ArrayList<Float> qd = readTextFromFile(is2);
-
-            float dataraw[][][] = new float[8][550][2];
-
-            for (int i = 0; i < 8; i++) {
-                for (int j = 0; j < 550; j++) {
-                    for (int k = 0; k < 2; k++) {
-                        if (k == 0) {
-                            dataraw[i][j][k] = id.get(i * 550 + j);
-                        } else {
-                            dataraw[i][j][k] = qd.get(i * 550 + j);
-                        }
-
-                    }
-                }
-            }
-            for (int i = 0; i < 8; i++) {
-                for (int j = 0; j < 550; j++) {
-                    for (int k = 0; k < 2; k++) {
-                        floatValues[k + j * 2 + i * 1100] = dataraw[i][j][k];
-                    }
-                }
-            }
-
-
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+    private int PredictContinous1(float[] input_lstm) {
+        inferenceInterface.feed(input_lstm_name, input_lstm, 1, 1024, 1, 1);
+        inferenceInterface.run(outputNames2, logStats);
+        //执行下面这一句之后拿到的识别lstm的可信度，lstm_softmax六个位置存储6个label的概率
+        inferenceInterface.fetch(lstm_accuracy_name, lstm_softmax);
+        inferenceInterface.fetch(output_lstm_name, outputint);
+        int max_index = (int) outputint[0];
+        if (lstm_softmax[max_index] > 0.9) {
+            return max_index;
         }
-        for (int i = 0; i < 13; i++) {
-            outputs[i] = -1;
-        }
-        // 把数据喂给TensorFlow
-        Trace.beginSection("feed");
-        //  inferenceInterface.feed(inputName, floatValues, batch, h, w, c);
-        Trace.endSection();
+        return -1;
 
-        // Run the inference call.
-        Trace.beginSection("run");
-        //运行TensorFlow
+    }
+
+    //输入是8800的mic data，返回256的全连接层输出
+    private float[] FromCnnGetFc(float[] input_cnn) {
+        float output_fc[] = new float[256];
+        inferenceInterface.feed(input_cnn_name, input_cnn, 1, 8, 550, 2);
         inferenceInterface.run(outputNames, logStats);
-        Trace.endSection();
-
-        // Copy the output Tensor back into the output array.
-        // 捕捉输出
-        Trace.beginSection("fetch");
-        //inferenceInterface.fetch(outputNameint, outputint);
-        Trace.endSection();
-        String log = "\n" + target + ":\n";
-
-        Log.i("TensorflowesturePredict", "result:" + outputint[0]);
-
+        inferenceInterface.fetch(fullconnection1_name, output_fc);
+        return output_fc;
     }
 
-    /**
-     * 按行读取txt
-     *
-     * @param is
-     * @return
-     * @throws Exception
-     */
-    private ArrayList<Float> readTextFromFile(InputStream is) throws Exception {
-        InputStreamReader reader = new InputStreamReader(is);
-        BufferedReader bufferedReader = new BufferedReader(reader);
-        StringBuffer buffer = new StringBuffer("");
-        ArrayList<Float> data = new ArrayList<>();
-        String str;
-        while ((str = bufferedReader.readLine()) != null) {
-            data.add(Float.parseFloat(str));
+    private float[] ListToArray(List<float[]> four_256) {
+        float array[] = new float[1024];
+
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 256; j++) {
+                array[i * 256 + j] = four_256.get(i)[j];
+            }
         }
 
-
-        return data;
+        return array;
     }
+
 }
