@@ -89,21 +89,6 @@ public class TensorFlowUtil {
 
     List<float[]> memory_256 = new ArrayList<float[]>();//记录最多4个mic fc
 
-//<<<<<<< HEAD
-//            for (int j = 0; j < 8800; j++) {
-//                mic_gesture[j] = gesturedata.get(i)[j];
-//            }
-//            inferenceInterface.feed(input_cnn, mic_gesture, 1, 8, 550, 2);
-//            inferenceInterface.run(outputNames, logStats);
-//            inferenceInterface.fetch(fullconnection1, outputfuuconnection);
-//            //执行这句之后cnn_softmax里面就是当前cnn网络根据送入的数据预测出来的各组label的可信度，存储在cnn_softmax中，每一个下标中存储的是
-//            //对应label的概率
-//            //inferenceInterface.fetch(cnn_accuracy, cnn_softmax);
-//            for (int k = i * 256; k < (i + 1) * 256; k++) {
-//                input_ls[k] = outputfuuconnection[k % 256];
-//            }
-//        }
-//=======
 
     /*
     不管哪种输入方案Predict的输入始终控制为当前0.5mic的数据，这样可以保证每0.5s出一个label
@@ -112,7 +97,7 @@ public class TensorFlowUtil {
     public int PredictContinous(float cur_mic[], int index_case) {
         float cur_fc[] = FromCnnGetFc(cur_mic);//拿到当前0.5s输入的fc层输出
         float input_lstm[];
-//>>>>>>> 6821ba8db31da1f7940aa70fc1526e10f994c9dd
+
 
         switch (index_case) {
             case 0:
@@ -223,6 +208,9 @@ public class TensorFlowUtil {
                 }
 
                 int res = PredictContinous1(input_lstm);
+                if (res!=-1){//如果返回的label正常则应该清空memory
+                    memory_256.clear();
+                }
                 return res;
 
         }

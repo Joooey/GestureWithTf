@@ -219,17 +219,7 @@ public class GlobalBean {
             @SuppressLint("ResourceAsColor")
             @Override
             public void onClick(View v) {
-//
-//<<<<<<< HEAD
-//
-//
-//                if (whoandwhich.equals("")) {
-//                    Toast.makeText(context, "不告诉我你是谁不让你录！", Toast.LENGTH_SHORT).show();
-//                    return;
-//                }
-//
-//                Start();
-//=======
+
                 StartInit();
 
 
