@@ -42,7 +42,7 @@ public class GlobalBean {
     public int sampleRateInHz = 44100;//采样率（默认44100，每秒44100个点）
     public int recBufSize = 4400;            //定义录音片长度
     public int numfre = 8;
-    public String[] gesture_name = {"Static", "Push Left", "Push Right", "Click", "Flip", "Circle"};
+    public String[] gesture_name = {"Static", "Approaching", "Aparting", "Click", "Flip", "Circle"};
 
     public TensorFlowUtil tensorFlowUtil;
 
