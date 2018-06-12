@@ -45,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
         globalBean.tvDist = (TextView) findViewById(R.id.textView1);
         globalBean.flag_small = (ImageView) findViewById(R.id.flag_small);
         globalBean.tvDist2 = findViewById(R.id.textView2);
+        globalBean.debug_checkbox=findViewById(R.id.debug);
         globalBean.Init();
     }
 }

@@ -61,8 +61,8 @@ public class InstantRecordThread extends Thread {
             while_count++;
 
             if (begin_while > 0) {
-                globalBean.AddDataToList(globalBean.L_I, tempIIL);
-                globalBean.AddDataToList(globalBean.L_Q, tempQQL);
+                globalBean.AddDataToList(globalBean.L_I, tempIIL,true);
+                globalBean.AddDataToList(globalBean.L_Q, tempQQL,false);
             }
 
 

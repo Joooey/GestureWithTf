@@ -226,7 +226,7 @@ public class TensorFlowUtil {
         inferenceInterface.run(outputNames2, logStats);
         //执行下面这一句之后拿到的识别lstm的可信度，lstm_softmax六个位置存储6个label的概率
         inferenceInterface.fetch(lstm_accuracy_name, lstm_softmax);
-        float res[] = new float[2];
+        float res[] = new float[8];
 
         int max_index = 0;
         for (int i = 1; i < lstm_softmax.length; i++) {

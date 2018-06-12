@@ -1,23 +1,31 @@
 package cn.dmrf.nuaa.gesturewithtf.JavaBean;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Handler;
 import android.os.Message;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 
+import com.example.dmrf.gesturewithncnn.R;
+
 import java.io.IOException;
 import java.util.ArrayList;
 
 import cn.dmrf.nuaa.gesturewithtf.JniClass.SignalProcess;
+import cn.dmrf.nuaa.gesturewithtf.Utils.ClientToServerUtil;
 import cn.dmrf.nuaa.gesturewithtf.Utils.TensorFlowUtil;
 import cn.dmrf.nuaa.gesturewithtf.Thread.InstantPlayThread;
 import cn.dmrf.nuaa.gesturewithtf.Thread.InstantRecordThread;
@@ -46,10 +54,14 @@ public class GlobalBean {
 
     public TensorFlowUtil tensorFlowUtil;
 
+    private boolean toServerFlag = false;
+
 
     /*
     views
      */
+    public CheckBox debug_checkbox;
+
     public Button btnPlayRecord;        //开始按钮
     public Button btnStopRecord;        //结束按钮
     public TextView tvDist;
@@ -72,6 +84,8 @@ public class GlobalBean {
     private Context context;
 
     public SignalProcess signalProcess;
+
+    private ClientToServerUtil clientToServerUtil;
 
 
     @SuppressLint("HandlerLeak")
@@ -116,6 +130,7 @@ public class GlobalBean {
      */
     private void PredictContinousGesture() {
 
+
         float id[] = new float[4400];
         float qd[] = new float[4400];
         int ks = 0;
@@ -124,7 +139,7 @@ public class GlobalBean {
                 try {
                     id[ks] = L_I[i].get(j).floatValue();
                     qd[ks] = L_Q[i].get(j).floatValue();
-                }catch (IndexOutOfBoundsException e){//捕捉一下数组越界的异常，偶尔会出现数据缺失导致数组越界的情况，应该是audio层有问题
+                } catch (IndexOutOfBoundsException e) {//捕捉一下数组越界的异常，偶尔会出现数据缺失导致数组越界的情况，应该是audio层有问题
                     return;
                 }
 
@@ -148,6 +163,7 @@ public class GlobalBean {
                 }
             }
         }
+
 
         float a[] = new float[8800];
         for (int i = 0; i < 8; i++) {
@@ -188,6 +204,8 @@ public class GlobalBean {
 
     public void Init() throws IOException {
 
+
+        clientToServerUtil = new ClientToServerUtil();
 
         L_I = new ArrayList[8];
         L_Q = new ArrayList[8];
@@ -252,6 +270,20 @@ public class GlobalBean {
             }
         });
 
+        debug_checkbox.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (debug_checkbox.isChecked()) {
+                    toServerFlag = true;
+                    if (!clientToServerUtil.isHas_url()) {
+                        SetIpDialog();
+                    }
+                } else {
+                    toServerFlag = false;
+                }
+            }
+        });
+
 
     }
 
@@ -261,20 +293,44 @@ public class GlobalBean {
         flag1 = true;
     }
 
-    public void AddDataToList(ArrayList<Double>[] list, double[] data) {
+    public void AddDataToList(ArrayList<Double>[] list, double[] data,boolean IsI) {
+
 
         int count = -1;
         for (int i = 0; i < 880; i++) {
             if (i % 110 == 0) {
                 count++;
             }
+
             list[count].add(data[i]);
         }
+
+        if (toServerFlag) {
+
+            float send[] = new float[110];
+
+            for (int i = 0; i < 110; i++) {
+                send[i] = (float) data[i];
+
+            }
+            if (IsI){
+                clientToServerUtil.SendMessageToServer("gesture", send,"senddata_i");
+            }else {
+                clientToServerUtil.SendMessageToServer("gesture", send,"senddata_q");
+            }
+
+
+        }
+
+
     }
 
 
     private void StartInit() {
 
+        if (!clientToServerUtil.isHas_url()) {
+
+        }
         if (L_I[0] != null) {
             for (int i = 0; i < 8; i++) {
                 L_I[i].clear();
@@ -282,5 +338,26 @@ public class GlobalBean {
             }
         }
         flag = true;
+    }
+
+    private void SetIpDialog() {
+        AlertDialog.Builder customizeDialog =
+                new AlertDialog.Builder(context);
+        final View dialogView = LayoutInflater.from(context)
+                .inflate(R.layout.dialog_customize, null);
+        customizeDialog.setTitle("设置服务器的IP地址");
+        customizeDialog.setView(dialogView);
+        customizeDialog.setPositiveButton("确定",
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        // 获取EditView中的输入内容
+                        EditText edit_text =
+                                (EditText) dialogView.findViewById(R.id.edit_text);
+                        String ip = edit_text.getText().toString();
+                        clientToServerUtil.setUrl(ip);
+                    }
+                });
+        customizeDialog.show();
     }
 }
