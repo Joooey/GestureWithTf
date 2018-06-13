@@ -31,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
 
         Bmob.initialize(this, "9dbc988651cd8b0403a4d8e2566459e9");
         globalBean = new GlobalBean(MainActivity.this);
-        globalBean.tensorFlowUtil = new TensorFlowUtil(getAssets(), "gesture_cnn_lstm6.pb");
+        globalBean.tensorFlowUtil = new TensorFlowUtil(getAssets(), "gesture_cnn_lstm6.pb",globalBean);
         try {
             Init();
         } catch (IOException e) {

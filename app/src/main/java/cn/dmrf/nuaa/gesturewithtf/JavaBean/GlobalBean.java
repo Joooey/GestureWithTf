@@ -54,7 +54,7 @@ public class GlobalBean {
 
     public TensorFlowUtil tensorFlowUtil;
 
-    private boolean toServerFlag = false;
+    public boolean toServerFlag = false;
 
 
     /*
@@ -85,7 +85,7 @@ public class GlobalBean {
 
     public SignalProcess signalProcess;
 
-    private ClientToServerUtil clientToServerUtil;
+    public ClientToServerUtil clientToServerUtil;
 
 
     @SuppressLint("HandlerLeak")

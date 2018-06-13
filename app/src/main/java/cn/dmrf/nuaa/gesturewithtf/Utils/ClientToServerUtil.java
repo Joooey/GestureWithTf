@@ -13,7 +13,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class ClientToServerUtil {
-    private String url = "http://" + "112.86.199.151" + ":5000/";
+    private String url = "http://" + "112.86.199.135" + ":5000/";
     private String type = "senddata_i";
 
     private boolean has_url = true;
