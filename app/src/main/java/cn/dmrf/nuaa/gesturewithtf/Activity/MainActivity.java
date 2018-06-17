@@ -13,6 +13,7 @@ import java.io.IOException;
 
 import cn.bmob.v3.Bmob;
 import cn.dmrf.nuaa.gesturewithtf.JavaBean.GlobalBean;
+import cn.dmrf.nuaa.gesturewithtf.Utils.SystemAction;
 import cn.dmrf.nuaa.gesturewithtf.Utils.TensorFlowUtil;
 import cn.dmrf.nuaa.gesturewithtf.Utils.VerifyPermission;
 
@@ -32,6 +33,9 @@ public class MainActivity extends AppCompatActivity {
         Bmob.initialize(this, "9dbc988651cd8b0403a4d8e2566459e9");
         globalBean = new GlobalBean(MainActivity.this);
         globalBean.tensorFlowUtil = new TensorFlowUtil(getAssets(), "gesture_cnn_lstm6.pb",globalBean);
+
+        //SystemAction systemAction = new SystemAction(MainActivity.this);
+
         try {
             Init();
         } catch (IOException e) {
