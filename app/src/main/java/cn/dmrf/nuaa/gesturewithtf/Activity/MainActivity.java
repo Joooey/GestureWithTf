@@ -31,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
 
         Bmob.initialize(this, "9dbc988651cd8b0403a4d8e2566459e9");
         globalBean = new GlobalBean(MainActivity.this);
-        globalBean.tensorFlowUtil = new TensorFlowUtil(getAssets(), "gesture_cnn_lstm6.pb");
+        globalBean.tensorFlowUtil = new TensorFlowUtil(getAssets(), "gesture_cnn_lstm6.pb",globalBean);
         try {
             Init();
         } catch (IOException e) {
@@ -45,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
         globalBean.tvDist = (TextView) findViewById(R.id.textView1);
         globalBean.flag_small = (ImageView) findViewById(R.id.flag_small);
         globalBean.tvDist2 = findViewById(R.id.textView2);
+        globalBean.debug_checkbox=findViewById(R.id.debug);
         globalBean.Init();
     }
 }

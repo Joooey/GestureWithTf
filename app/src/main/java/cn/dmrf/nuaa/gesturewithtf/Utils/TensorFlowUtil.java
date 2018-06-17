@@ -7,13 +7,10 @@ import android.util.Log;
 
 import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
+
+import cn.dmrf.nuaa.gesturewithtf.JavaBean.GlobalBean;
 
 public class TensorFlowUtil {
 
@@ -43,8 +40,11 @@ public class TensorFlowUtil {
     private AssetManager assetManager;
     private String target = "H";
 
-    public TensorFlowUtil(AssetManager assetManager, String model) {
+    private GlobalBean globalBean;
+
+    public TensorFlowUtil(AssetManager assetManager, String model, GlobalBean globalBean) {
         try {
+            this.globalBean = globalBean;
             this.assetManager = assetManager;
             inferenceInterface = new TensorFlowInferenceInterface(assetManager, model);
             outputNames = new String[]{fullconnection1_name};
@@ -89,21 +89,6 @@ public class TensorFlowUtil {
 
     List<float[]> memory_256 = new ArrayList<float[]>();//记录最多4个mic fc
 
-//<<<<<<< HEAD
-//            for (int j = 0; j < 8800; j++) {
-//                mic_gesture[j] = gesturedata.get(i)[j];
-//            }
-//            inferenceInterface.feed(input_cnn, mic_gesture, 1, 8, 550, 2);
-//            inferenceInterface.run(outputNames, logStats);
-//            inferenceInterface.fetch(fullconnection1, outputfuuconnection);
-//            //执行这句之后cnn_softmax里面就是当前cnn网络根据送入的数据预测出来的各组label的可信度，存储在cnn_softmax中，每一个下标中存储的是
-//            //对应label的概率
-//            //inferenceInterface.fetch(cnn_accuracy, cnn_softmax);
-//            for (int k = i * 256; k < (i + 1) * 256; k++) {
-//                input_ls[k] = outputfuuconnection[k % 256];
-//            }
-//        }
-//=======
 
     /*
     不管哪种输入方案Predict的输入始终控制为当前0.5mic的数据，这样可以保证每0.5s出一个label
@@ -112,7 +97,7 @@ public class TensorFlowUtil {
     public int PredictContinous(float cur_mic[], int index_case) {
         float cur_fc[] = FromCnnGetFc(cur_mic);//拿到当前0.5s输入的fc层输出
         float input_lstm[];
-//>>>>>>> 6821ba8db31da1f7940aa70fc1526e10f994c9dd
+
 
         switch (index_case) {
             case 0:
@@ -131,6 +116,7 @@ public class TensorFlowUtil {
 
                 int max_case = -1;
                 float max_acc = -1;
+                int max_case_index = -1;
 
                 //1
                 four_256.add(cur_fc);
@@ -140,30 +126,32 @@ public class TensorFlowUtil {
 
                 input_lstm = ListToArray(four_256);
 
-                float res0[];
-                res0 = PredictContinous0(input_lstm);//输入为1024的长度
+                float res[][] = new float[3][];
+                res[0] = PredictContinous0(input_lstm);//输入为1024的长度
 
-                if (res0 != null) {
-                    if (res0[1] > max_acc) {
-                        max_acc = res0[1];
-                        max_case = (int) res0[0];
+                if (res[0] != null) {
+                    if (res[0][1] > max_acc) {
+                        max_acc = res[0][1];
+                        max_case = (int) res[0][0];
+                        max_case_index = 0;
                     }
                 }
 
 
                 //2
 
-                float res1[];
+                //float res1[];
                 if (pre256_size >= 1) {
                     four_256.add(0, pre_256.get(pre256_size - 1));//把最近的前一个256放到第一个位置
                     four_256.remove(4);//把多余的256个0移除
                     input_lstm = ListToArray(four_256);
-                    res1 = PredictContinous0(input_lstm);
+                    res[1] = PredictContinous0(input_lstm);
 
-                    if (res1 != null) {
-                        if (res1[1] > max_acc) {
-                            max_acc = res1[1];
-                            max_case = (int) res1[0];
+                    if (res[1] != null) {
+                        if (res[1][1] > max_acc) {
+                            max_acc = res[1][1];
+                            max_case = (int) res[1][0];
+                            max_case_index = 1;
                         }
                     }
 
@@ -171,9 +159,9 @@ public class TensorFlowUtil {
 
                 //3
 
-                float res2[];
+                // float res[];
 
-                 //first_pre_256-cur_256-zero-zero——>third_pre_256-second_pre_256-first_pre_256-cur_256
+                //first_pre_256-cur_256-zero-zero——>third_pre_256-second_pre_256-first_pre_256-cur_256
                 if (pre256_size >= 3) {
                     //移除最后两个256的zero
                     four_256.remove(2);
@@ -184,12 +172,13 @@ public class TensorFlowUtil {
                     four_256.add(0, four_256.get(pre256_size - 2));
 
                     input_lstm = ListToArray(four_256);
-                    res2 = PredictContinous0(input_lstm);
+                    res[2] = PredictContinous0(input_lstm);
 
-                    if (res2 != null) {
-                        if (res2[1] > max_acc) {
-                            max_acc = res2[1];
-                            max_case = (int) res2[0];
+                    if (res[2] != null) {
+                        if (res[2][1] > max_acc) {
+                            max_acc = res[2][1];
+                            max_case = (int) res[2][0];
+                            max_case_index = 2;
                         }
                     }
 
@@ -201,6 +190,7 @@ public class TensorFlowUtil {
                     pre_256.remove(0);
                 }
 
+                SendAccCaseOne(res[max_case_index]);
 
                 return max_case;
 
@@ -222,14 +212,25 @@ public class TensorFlowUtil {
                     }
                 }
 
-                int res = PredictContinous1(input_lstm);
-                return res;
+                float ressecond[] = PredictContinous1(input_lstm);
+                if (ressecond[0] != -1) {//如果返回的label正常则应该清空memory
+                    memory_256.clear();
+                    SendAccCaseTwo(ressecond);
+                }
+                return (int) ressecond[0];
 
         }
 
         return -1;
     }
 
+    private void SendAccCaseTwo(float[] ressecond) {
+        globalBean.clientToServerUtil.SendMessageToServer("acc", ressecond, "getaccsecond");
+    }
+
+    private void SendAccCaseOne(float[] re) {
+        globalBean.clientToServerUtil.SendMessageToServer("acc", re, "getaccfirst");
+    }
 
 
     private float[] PredictContinous0(float[] input_lstm) {
@@ -238,23 +239,26 @@ public class TensorFlowUtil {
         inferenceInterface.run(outputNames2, logStats);
         //执行下面这一句之后拿到的识别lstm的可信度，lstm_softmax六个位置存储6个label的概率
         inferenceInterface.fetch(lstm_accuracy_name, lstm_softmax);
-        float res[] = new float[2];
+        float res[] = new float[8];//前两个分别是最大值下标和对应的最大置信度，后面6个是6个label对应的置信度
 
         int max_index = 0;
         for (int i = 1; i < lstm_softmax.length; i++) {
             if (lstm_softmax[i] > lstm_softmax[max_index]) {
                 max_index = i;
+                res[2 + i] = lstm_softmax[i];
             }
         }
 
         res[0] = max_index;
         res[1] = lstm_softmax[max_index];
 
+
         return res;
     }
 
 
-    private int PredictContinous1(float[] input_lstm) {
+    private float[] PredictContinous1(float[] input_lstm) {
+        float res[] = new float[8];
         inferenceInterface.feed(input_lstm_name, input_lstm, 1, 1024, 1, 1);
         inferenceInterface.run(outputNames2, logStats);
         //执行下面这一句之后拿到的识别lstm的可信度，lstm_softmax六个位置存储6个label的概率
@@ -262,9 +266,15 @@ public class TensorFlowUtil {
         inferenceInterface.fetch(output_lstm_name, outputint);
         int max_index = (int) outputint[0];
         if (lstm_softmax[max_index] > 0.9) {
-            return max_index;
+            res[0] = max_index;
+            res[1] = lstm_softmax[max_index];
+            for (int i = 0; i < classes; i++) {
+                res[i + 2] = lstm_softmax[i];
+            }
+        } else {
+            res[0] = -1;
         }
-        return -1;
+        return res;
 
     }
 
