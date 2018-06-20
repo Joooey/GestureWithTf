@@ -11,7 +11,15 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="20dp"
-        android:text="调试模式" />
+        android:text="Send Data To Server" />
+
+    <CheckBox
+        android:id="@+id/sys_action"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="20dp"
+        android:text="System Action" />
 
 
     <Button

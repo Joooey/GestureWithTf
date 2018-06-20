@@ -26,6 +26,7 @@ import java.util.ArrayList;
 
 import cn.dmrf.nuaa.gesturewithtf.JniClass.SignalProcess;
 import cn.dmrf.nuaa.gesturewithtf.Utils.ClientToServerUtil;
+import cn.dmrf.nuaa.gesturewithtf.Utils.ControlSystemActionUtil;
 import cn.dmrf.nuaa.gesturewithtf.Utils.TensorFlowUtil;
 import cn.dmrf.nuaa.gesturewithtf.Thread.InstantPlayThread;
 import cn.dmrf.nuaa.gesturewithtf.Thread.InstantRecordThread;
@@ -55,12 +56,14 @@ public class GlobalBean {
     public TensorFlowUtil tensorFlowUtil;
 
     public boolean toServerFlag = false;
+    private ControlSystemActionUtil controlSystemActionUtil;
 
 
     /*
     views
      */
     public CheckBox debug_checkbox;
+    public CheckBox sys_action_checkbox;
 
     public Button btnPlayRecord;        //开始按钮
     public Button btnStopRecord;        //结束按钮
@@ -76,6 +79,7 @@ public class GlobalBean {
      */
     public boolean flag = true;        //播放标志
     public boolean flag1 = false;        //结束标志
+    private boolean sys_action_flag = false;//启用系统动作标志
 
     public ArrayList<Double> L_I[];
     public ArrayList<Double> L_Q[];
@@ -183,20 +187,54 @@ public class GlobalBean {
         if (inde == -1) {
             tvDist.setText("...");
         } else {
-            tvDist.setText("！"+gesture_name[inde]);
+            tvDist.setText("！" + gesture_name[inde]);
         }
 
 
         inde = tensorFlowUtil.PredictContinous(a, 1);
-        if (inde == -1) {
-            tvDist2.setText("...");
-        } else {
-            tvDist2.setText(gesture_name[inde]);
-        }
+        UpDataUi(inde);
 
 
     }
 
+
+    private void UpDataUi(int label) {
+        if (label == -1) {
+            tvDist2.setText("...");
+        } else {
+            tvDist2.setText(gesture_name[label]);
+        }
+
+        // {"Static", "Approaching", "Aparting", "Click", "Flip", "Circle"}
+        /*
+        - approach——screenlighter 1
+        - apart——screendarker 2
+        - cicle——volumeup 5
+        - click——volumedown 3
+        - flip——showdesktop 4
+         */
+        if (sys_action_flag) {
+            switch (label) {
+                case 0:
+                    break;
+                case 1:
+                    controlSystemActionUtil.lighter();
+                    break;
+                case 2:
+                    controlSystemActionUtil.darker();
+                    break;
+                case 3:
+                    controlSystemActionUtil.volumedown();
+                    break;
+                case 4:
+                    controlSystemActionUtil.showdesk();
+                    break;
+                case 5:
+                    controlSystemActionUtil.volumeup();
+                    break;
+            }
+        }
+    }
 
     public GlobalBean(Context context) {
         this.context = context;
@@ -284,6 +322,18 @@ public class GlobalBean {
             }
         });
 
+        sys_action_checkbox.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (sys_action_checkbox.isChecked()) {
+                    sys_action_flag = true;
+                    controlSystemActionUtil.InitSys();
+                } else {
+                    sys_action_flag = false;
+                }
+            }
+        });
+
 
     }
 
@@ -293,7 +343,7 @@ public class GlobalBean {
         flag1 = true;
     }
 
-    public void AddDataToList(ArrayList<Double>[] list, double[] data,boolean IsI) {
+    public void AddDataToList(ArrayList<Double>[] list, double[] data, boolean IsI) {
 
 
         int count = -1;
@@ -313,10 +363,10 @@ public class GlobalBean {
                 send[i] = (float) data[i];
 
             }
-            if (IsI){
-                clientToServerUtil.SendMessageToServer("gesture", send,"senddata_i");
-            }else {
-                clientToServerUtil.SendMessageToServer("gesture", send,"senddata_q");
+            if (IsI) {
+                clientToServerUtil.SendMessageToServer("gesture", send, "senddata_i");
+            } else {
+                clientToServerUtil.SendMessageToServer("gesture", send, "senddata_q");
             }
 
 

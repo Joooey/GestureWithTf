@@ -34,8 +34,6 @@ public class MainActivity extends AppCompatActivity {
         globalBean = new GlobalBean(MainActivity.this);
         globalBean.tensorFlowUtil = new TensorFlowUtil(getAssets(), "gesture_cnn_lstm6.pb",globalBean);
 
-        //SystemAction systemAction = new SystemAction(MainActivity.this);
-
         try {
             Init();
         } catch (IOException e) {
@@ -50,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
         globalBean.flag_small = (ImageView) findViewById(R.id.flag_small);
         globalBean.tvDist2 = findViewById(R.id.textView2);
         globalBean.debug_checkbox=findViewById(R.id.debug);
+        globalBean.sys_action_checkbox=findViewById(R.id.sys_action);
         globalBean.Init();
     }
 }
