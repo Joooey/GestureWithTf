@@ -6,7 +6,10 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
+import android.net.Uri;
+import android.os.Build;
 import android.provider.Settings;
+import android.support.annotation.RequiresApi;
 import android.view.Window;
 import android.view.WindowManager;
 
@@ -30,20 +33,28 @@ public class ControlSystemActionUtil {
     }
 
     //在globalbean中调用
+    @RequiresApi(api = Build.VERSION_CODES.M)
     public void InitSys() {
         if (!hasInit) {
-            ContentResolver contentResolver = context.getContentResolver();
-            try {
-                int mode = Settings.System.getInt(contentResolver,
-                        Settings.System.SCREEN_BRIGHTNESS_MODE);
-                if (mode == Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC) {
-                    Settings.System.putInt(contentResolver, Settings.System.SCREEN_BRIGHTNESS_MODE,
-                            Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL);
+            if (!Settings.System.canWrite(context)) {
+                Intent intent = new Intent(android.provider.Settings.ACTION_MANAGE_WRITE_SETTINGS);
+                intent.setData(Uri.parse("package:" + context.getPackageName()));
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(intent);
+            } else {
+                ContentResolver contentResolver = context.getContentResolver();
+                try {
+                    int mode = Settings.System.getInt(contentResolver,
+                            Settings.System.SCREEN_BRIGHTNESS_MODE);
+                    if (mode == Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC) {
+                        Settings.System.putInt(contentResolver, Settings.System.SCREEN_BRIGHTNESS_MODE,
+                                Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL);
+                    }
+                } catch (Settings.SettingNotFoundException e) {
+                    e.printStackTrace();
                 }
-            } catch (Settings.SettingNotFoundException e) {
-                e.printStackTrace();
+                hasInit = true;
             }
-            hasInit = true;
         } else {
             return;
         }
@@ -67,7 +78,7 @@ public class ControlSystemActionUtil {
             brightness -= change_value;
 
         } else {
-            brightness = 0;
+            brightness = 30;
         }
         setScreenBrightness(brightness);
 

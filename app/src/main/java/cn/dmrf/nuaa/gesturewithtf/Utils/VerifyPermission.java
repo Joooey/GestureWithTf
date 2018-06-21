@@ -17,7 +17,7 @@ public class VerifyPermission {
     }
 
     public void RequestPermission() {
-        String[] permissions = {Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_PHONE_STATE,Manifest.permission.WRITE_SETTINGS};
+        String[] permissions = {Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_PHONE_STATE};
         if (PermissionsUtil.hasPermission(context, permissions)) {
             //已经获取相关权限
         } else {

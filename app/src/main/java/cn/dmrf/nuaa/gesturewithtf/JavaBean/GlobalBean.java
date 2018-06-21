@@ -7,8 +7,10 @@ import android.content.DialogInterface;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
+import android.support.annotation.RequiresApi;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -242,7 +244,7 @@ public class GlobalBean {
 
     public void Init() throws IOException {
 
-
+        controlSystemActionUtil = new ControlSystemActionUtil(context);
         clientToServerUtil = new ClientToServerUtil();
 
         L_I = new ArrayList[8];
@@ -323,6 +325,7 @@ public class GlobalBean {
         });
 
         sys_action_checkbox.setOnClickListener(new View.OnClickListener() {
+            @RequiresApi(api = Build.VERSION_CODES.M)
             @Override
             public void onClick(View view) {
                 if (sys_action_checkbox.isChecked()) {

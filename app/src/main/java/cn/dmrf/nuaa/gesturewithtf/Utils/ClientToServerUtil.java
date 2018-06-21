@@ -1,8 +1,5 @@
 package cn.dmrf.nuaa.gesturewithtf.Utils;
 
-import android.util.Log;
-import android.widget.Toast;
-
 import java.io.IOException;
 
 import okhttp3.Call;
